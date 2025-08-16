@@ -1,28 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, MapPin, Users, Award, Zap, Menu, X, Moon, Sun } from 'lucide-react';
+import { Search, Plus, MapPin, Users, Award, Zap, Menu, X, Moon, Sun, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
+import { useStore } from './store/useStore';
 import LandingPage from './components/LandingPage';
 import Dashboard from './components/Dashboard';
 import ReportForm from './components/ReportForm';
 import AdminPanel from './components/AdminPanel';
 import UserProfile from './components/UserProfile';
+import AnimatedBackground from './components/ui/AnimatedBackground';
+import PageTransition from './components/ui/PageTransition';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [darkMode, setDarkMode] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  const { 
+    currentPage, 
+    setCurrentPage, 
+    darkMode, 
+    toggleDarkMode,
+    notifications 
+  } = useStore();
 
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true';
-    setDarkMode(isDark);
-    document.documentElement.classList.toggle('dark', isDark);
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', newDarkMode.toString());
-    document.documentElement.classList.toggle('dark', newDarkMode);
-  };
+    document.documentElement.classList.toggle('dark', darkMode);
+  }, [darkMode]);
 
   const navigationItems = [
     { id: 'home', label: 'Home', icon: Users },
@@ -32,124 +34,222 @@ function App() {
     { id: 'profile', label: 'Profile', icon: Zap }
   ];
 
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <LandingPage onNavigate={setCurrentPage} />;
+        return <LandingPage />;
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentPage} />;
+        return <Dashboard />;
       case 'report':
-        return <ReportForm onNavigate={setCurrentPage} />;
+        return <ReportForm />;
       case 'admin':
-        return <AdminPanel onNavigate={setCurrentPage} />;
+        return <AdminPanel />;
       case 'profile':
-        return <UserProfile onNavigate={setCurrentPage} />;
+        return <UserProfile />;
       default:
-        return <LandingPage onNavigate={setCurrentPage} />;
+        return <LandingPage />;
     }
   };
 
   return (
-    <div className={`min-h-screen transition-all duration-1000 ease-in-out ${
-      darkMode 
-        ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900' 
-        : 'bg-gradient-to-br from-blue-50 via-purple-50 to-emerald-50'
-    }`}>
+    <div className="min-h-screen relative overflow-hidden">
+      <AnimatedBackground />
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          className: 'backdrop-blur-lg bg-white/90 dark:bg-gray-900/90 border border-white/20 dark:border-gray-700/20',
+          duration: 4000,
+        }}
+      />
+      
       {/* Navigation Header */}
-      <header className={`fixed top-0 w-full z-50 backdrop-blur-lg ${
-        darkMode ? 'bg-gray-900/80' : 'bg-white/80'
-      } border-b ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+      <motion.header 
+        className="fixed top-0 w-full z-50 backdrop-blur-xl bg-white/10 dark:bg-gray-900/20 border-b border-white/20 dark:border-gray-700/20"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600">
+            <motion.div 
+              className="flex items-center space-x-3"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <motion.div 
+                className="p-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg"
+                whileHover={{ 
+                  boxShadow: '0 0 20px rgba(147, 51, 234, 0.5)',
+                  rotate: 5 
+                }}
+              >
                 <MapPin className="h-6 w-6 text-white" />
-              </div>
+              </motion.div>
               <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                 CampusFind
               </h1>
-            </div>
+            </motion.div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex space-x-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <motion.button
                     key={item.id}
                     onClick={() => setCurrentPage(item.id)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2 ${
+                    className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 ${
                       currentPage === item.id
-                        ? `bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg`
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                         : `${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`
                     }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </nav>
 
             {/* Controls */}
             <div className="flex items-center space-x-3">
-              <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-lg transition-all duration-300 ${
-                  darkMode 
-                    ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
+              {/* Notifications */}
+              <motion.button
+                className="relative p-2 rounded-xl transition-all duration-300 bg-white/10 dark:bg-gray-800/20 hover:bg-white/20 dark:hover:bg-gray-800/30"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
               >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
+                <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                {unreadNotifications > 0 && (
+                  <motion.span
+                    className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  >
+                    {unreadNotifications}
+                  </motion.span>
+                )}
+              </motion.button>
+
+              {/* Dark Mode Toggle */}
+              <motion.button
+                onClick={toggleDarkMode}
+                className="p-2 rounded-xl transition-all duration-300 bg-white/10 dark:bg-gray-800/20 hover:bg-white/20 dark:hover:bg-gray-800/30"
+                whileHover={{ scale: 1.1, rotate: 180 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <AnimatePresence mode="wait">
+                  {darkMode ? (
+                    <motion.div
+                      key="sun"
+                      initial={{ rotate: -180, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 180, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Sun className="h-5 w-5 text-yellow-400" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="moon"
+                      initial={{ rotate: -180, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 180, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Moon className="h-5 w-5 text-gray-600" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
 
               {/* Mobile Menu Button */}
-              <button
+              <motion.button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`md:hidden p-2 rounded-lg ${
+                className={`md:hidden p-2 rounded-xl ${
                   darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'
                 }`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
+                <AnimatePresence mode="wait">
+                  {isMenuOpen ? (
+                    <motion.div
+                      key="close"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <X className="h-6 w-6" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="menu"
+                      initial={{ rotate: -90, opacity: 0 }}
+                      animate={{ rotate: 0, opacity: 1 }}
+                      exit={{ rotate: 90, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Menu className="h-6 w-6" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.button>
             </div>
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
-        {isMenuOpen && (
-          <div className={`md:hidden border-t ${darkMode ? 'border-gray-800 bg-gray-900/95' : 'border-gray-200 bg-white/95'} backdrop-blur-lg`}>
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              className="md:hidden border-t border-white/20 dark:border-gray-700/20 backdrop-blur-xl bg-white/10 dark:bg-gray-900/20"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
             <div className="px-4 py-2 space-y-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <button
+                  <motion.button
                     key={item.id}
                     onClick={() => {
                       setCurrentPage(item.id);
                       setIsMenuOpen(false);
                     }}
-                    className={`w-full px-4 py-3 rounded-lg font-medium transition-all duration-300 flex items-center space-x-3 ${
+                    className={`w-full px-4 py-3 rounded-xl font-medium transition-all duration-300 flex items-center space-x-3 ${
                       currentPage === item.id
                         ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                         : `${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`
                     }`}
+                    whileHover={{ scale: 1.02, x: 5 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <Icon className="h-5 w-5" />
                     <span>{item.label}</span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
-          </div>
-        )}
-      </header>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
 
       {/* Main Content */}
       <main className="pt-16">
-        {renderPage()}
+        <PageTransition pageKey={currentPage}>
+          {renderPage()}
+        </PageTransition>
       </main>
     </div>
   );
